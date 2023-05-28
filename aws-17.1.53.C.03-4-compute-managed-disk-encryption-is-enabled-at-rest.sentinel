@@ -1,0 +1,21 @@
+import "tfplan"
+
+# Define the list of approved disk encryption algorithms
+allowedEncryptionAlgorithms = ["AES256", "AWS_KMS"]
+
+print("NZISM control enforcement 17.1.53.C.03 and 17.1.53.C.04: Ensure that managed disks are encrypted")
+
+# Main rule to check disk encryption
+main = rule {
+  # Iterate over all resource changes in the plan
+  all tfplan.resource_changes as _, rc {
+    # Check if the resource is a disk
+    rc.type is "aws_ebs_volume" or rc.type is "google_compute_disk" or rc.type is "azurerm_managed_disk" or rc.type is "vsphere_virtual_disk"
+
+    # Check if the encryption block exists
+    rc.change.after.encryption_configuration is known
+
+    # Check if the encryption algorithm is in the approved list
+    allowedEncryptionAlgorithms contains rc.change.after.encryption_configuration.algorithm
+  }
+}
