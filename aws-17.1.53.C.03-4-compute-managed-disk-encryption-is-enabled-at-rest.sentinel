@@ -13,15 +13,16 @@ main = rule {
     resource := resources[resource_name]
 
     # Check if the resource type corresponds to a disk
-    resource.type is "aws_ebs_volume" or
+    (resource.type is "aws_ebs_volume" or
     resource.type is "google_compute_disk" or
     resource.type is "azurerm_managed_disk" or
-    resource.type is "vsphere_virtual_disk"
+    resource.type is "vsphere_virtual_disk") and
 
     # Check if the encryption block exists
-    resource.attributes.encryption_configuration is known
+    resource.attributes.encryption_configuration is known and
 
     # Check if the encryption algorithm is in the approved list
     allowedEncryptionAlgorithms contains resource.attributes.encryption_configuration.algorithm
   }
 }
+
