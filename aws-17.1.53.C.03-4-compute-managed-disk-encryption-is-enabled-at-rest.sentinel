@@ -5,17 +5,23 @@ allowedEncryptionAlgorithms = ["AES256", "AWS_KMS"]
 
 # Main rule to check disk encryption
 main = rule {
-  # Iterate over all resource changes in the plan
-  all rc as _, rc_index {
-    rc.change.after.type is "aws_ebs_volume" or
-    rc.change.after.type is "google_compute_disk" or
-    rc.change.after.type is "azurerm_managed_disk" or
-    rc.change.after.type is "vsphere_virtual_disk"
+  # Access the plan resources
+  resources := tfplan.module_paths.resources
+
+  # Iterate over all disk resources
+  all resource_names as _, resource_name {
+    resource := resources[resource_name]
+
+    # Check if the resource type corresponds to a disk
+    resource.type is "aws_ebs_volume" or
+    resource.type is "google_compute_disk" or
+    resource.type is "azurerm_managed_disk" or
+    resource.type is "vsphere_virtual_disk"
 
     # Check if the encryption block exists
-    rc.change.after.encryption_configuration is known
+    resource.attributes.encryption_configuration is known
 
     # Check if the encryption algorithm is in the approved list
-    allowedEncryptionAlgorithms contains rc.change.after.encryption_configuration.algorithm
+    allowedEncryptionAlgorithms contains resource.attributes.encryption_configuration.algorithm
   }
 }
